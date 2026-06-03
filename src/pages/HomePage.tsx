@@ -1,5 +1,6 @@
 import Contact from "../components/Layout/Contact"
 import Coverage from "../components/Layout/Coverage"
+import Gallery from "../components/Layout/Gallery"
 import Header from "../components/Layout/Header"
 import Hero from "../components/Layout/Hero"
 import MyStory from "../components/Layout/MyStory"
@@ -13,6 +14,7 @@ const HomePage = () => {
       <MyStory />
       <Services />
       <Coverage />
+      <Gallery />
       <Contact />
     
     </div>

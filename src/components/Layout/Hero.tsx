@@ -12,7 +12,6 @@ const Hero = () => {
   const actionsRef = useRef<HTMLDivElement>(null)
   const badgesRef = useRef<HTMLDivElement>(null)
 
-  // Staggered entrance animation on mount
   useEffect(() => {
     const els = [
       tagRef.current,
@@ -26,7 +25,6 @@ const Hero = () => {
       el.style.opacity = "0"
       el.style.transform = "translateY(28px)"
       el.style.transition = `opacity 0.6s ease ${i * 0.12}s, transform 0.6s ease ${i * 0.12}s`
-      // Trigger in next frame
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           el.style.opacity = "1"
@@ -62,6 +60,50 @@ const Hero = () => {
           background:
             radial-gradient(ellipse 60% 50% at 80% 40%, rgba(90,143,98,0.08) 0%, transparent 70%),
             radial-gradient(ellipse 50% 60% at 10% 80%, rgba(212,168,67,0.07) 0%, transparent 60%);
+        }
+
+        /* Hero image - positioned on the right side */
+        .hero-image {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 45%;
+          max-width: 600px;
+          height: auto;
+          z-index: 0;
+          pointer-events: none;
+          opacity: 0.85;
+          object-fit: cover;
+          object-position: center bottom;
+          mask-image: linear-gradient(to left, black 60%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to left, black 60%, transparent 100%);
+        }
+
+        /* Larger screens - image comes up higher */
+        @media (min-width: 1200px) {
+          .hero-image {
+            bottom: 0;
+            width: 40%;
+            opacity: 0.9;
+          }
+        }
+
+        /* Tablet - reduce opacity and size */
+        @media (max-width: 900px) {
+          .hero-image {
+            width: 50%;
+            opacity: 0.6;
+            mask-image: linear-gradient(to left, black 40%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to left, black 40%, transparent 100%);
+          }
+        }
+
+        /* Mobile - hide image or make very subtle */
+        @media (max-width: 680px) {
+          .hero-image {
+            opacity: 0.25;
+            width: 70%;
+          }
         }
 
         /* Eyebrow tag */
@@ -170,7 +212,7 @@ const Hero = () => {
           display: flex;
           flex-direction: column;
           gap: 1rem;
-          z-index: 1;
+          z-index: 2;
         }
         .hero-badge {
           background: #FFFDF8;
@@ -178,6 +220,7 @@ const Hero = () => {
           padding: 1rem 1.4rem;
           text-align: center;
           box-shadow: 0 4px 24px rgba(44,26,14,0.08);
+          backdrop-filter: blur(4px);
         }
         .hero-badge:nth-child(1) {
           animation: kmFloat 4s ease-in-out infinite;
@@ -233,6 +276,14 @@ const Hero = () => {
       <section className="hero-section" id="home" aria-label="Hero">
         {/* Ambient blobs */}
         <div className="hero-bg" aria-hidden="true" />
+
+        {/* Hero Image - replace src with your actual image */}
+        <img 
+          src="https://images.pexels.com/photos/33611653/pexels-photo-33611653.jpeg"  // ← Replace with your image path
+          alt="Ken Mutua with livestock on his farm"
+          className="hero-image"
+          loading="eager"
+        />
 
         {/* Eyebrow */}
         <p className="hero-tag" ref={tagRef}>
