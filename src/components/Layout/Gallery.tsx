@@ -1,6 +1,14 @@
-import { useState } from "react"
+import { useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { 
+  fetchGalleryItems, 
+  selectGalleryItems, 
+  selectIsGalleryLoading, 
+  selectGalleryError 
+} from "../../store/slice/gallerySlice";
 
-const GALLERY_ITEMS = [
+// Retained as a type-safe structural fallback layer if server arrays are uninitialized
+const BACKUP_FALLBACK_ITEMS = [
   {
     id: 1,
     image: "https://images.pexels.com/photos/27908188/pexels-photo-27908188.jpeg",
@@ -73,33 +81,49 @@ const GALLERY_ITEMS = [
     category: "Farm",
     location: "Kitui County",
   },
-]
+];
 
-const CATEGORIES = ["All", "Poultry", "Livestock", "Farm", "Milestones", "Operations"]
+const CATEGORIES = ["All", "Poultry", "Livestock", "Farm", "Milestones", "Operations"];
 
 const Gallery = () => {
-  const [active, setActive] = useState("All")
-  const [lightbox, setLightbox] = useState<number | null>(null)
+  const dispatch = useAppDispatch();
+  
+  // Wire component into live Redux global architecture states
+  const serverItems = useAppSelector(selectGalleryItems);
+  const isLoading = useAppSelector(selectIsGalleryLoading);
+  const networkError = useAppSelector(selectGalleryError);
+
+  const [active, setActive] = useState("All");
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  // Trigger resource fetching pipeline on workspace mount phase
+  useEffect(() => {
+    dispatch(fetchGalleryItems());
+  }, [dispatch]);
+
+  // Use dynamic backend content if populated; fall back safely to static definitions if empty
+  const baseCollection = serverItems.length > 0 ? serverItems : BACKUP_FALLBACK_ITEMS;
 
   const filtered = active === "All"
-    ? GALLERY_ITEMS
-    : GALLERY_ITEMS.filter((g) => g.category === active)
+    ? baseCollection
+    : baseCollection.filter((g) => g.category === active);
 
-  const lightboxItem = GALLERY_ITEMS.find((g) => g.id === lightbox) ?? null
+  const lightboxItem = baseCollection.find((g) => g.id === lightbox) ?? null;
 
   const moveLightbox = (dir: 1 | -1) => {
-    if (!lightboxItem) return
-    const idx = filtered.findIndex((g) => g.id === lightboxItem.id)
-    const next = filtered[(idx + dir + filtered.length) % filtered.length]
-    setLightbox(next.id)
-  }
+    if (!lightboxItem) return;
+    const idx = filtered.findIndex((g) => g.id === lightboxItem.id);
+    if (idx === -1) return; // Guard against indexing edge mutations
+    const next = filtered[(idx + dir + filtered.length) % filtered.length];
+    setLightbox(next.id);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!lightboxItem) return
-    if (e.key === "ArrowLeft") moveLightbox(-1)
-    else if (e.key === "ArrowRight") moveLightbox(1)
-    else if (e.key === "Escape") setLightbox(null)
-  }
+    if (!lightboxItem) return;
+    if (e.key === "ArrowLeft") moveLightbox(-1);
+    else if (e.key === "ArrowRight") moveLightbox(1);
+    else if (e.key === "Escape") setLightbox(null);
+  };
 
   return (
     <>
@@ -150,49 +174,62 @@ const Gallery = () => {
           ))}
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setLightbox(item.id)}
-              className="group relative overflow-hidden cursor-pointer bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === "Enter" && setLightbox(item.id)}
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-[#E8D5C0]">
-                <img
-                  src={item.image}
-                  alt={item.label}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(44,26,14,0.9)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <span className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[0.7rem] font-semibold tracking-wide uppercase text-[#3E6B4E] z-10">
-                    {item.category}
-                  </span>
-                  <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm w-8 h-8 rounded-full flex items-center justify-center text-white text-base transition-all duration-200 group-hover:bg-white/30 group-hover:scale-110">
-                    ⤢
-                  </span>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-5 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
-                    <div className="font-['Cormorant_Garamond',serif] text-lg font-bold mb-1">{item.label}</div>
-                    <div className="text-sm font-light opacity-90 leading-relaxed mb-2">{item.caption.substring(0, 60)}...</div>
-                    <div className="text-xs font-normal opacity-70 flex items-center gap-1">📍 {item.location}</div>
+        {/* Informative Status Trackers for Admin Sync Diagnostics */}
+        {networkError && !serverItems.length && (
+          <div className="text-center max-w-md mx-auto mb-10 p-4 bg-red-50 rounded-xl border border-red-200 text-sm text-red-800">
+            ⚠️ Serving localized backups: Using offline asset data matrix.
+          </div>
+        )}
+
+        {/* Grid Container rendering processed outputs */}
+        {isLoading && serverItems.length === 0 ? (
+          <div className="text-center py-12 text-[#7A4A2E] font-light italic">
+            Connecting to live production timeline...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {filtered.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setLightbox(item.id)}
+                className="group relative overflow-hidden cursor-pointer bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && setLightbox(item.id)}
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#E8D5C0]">
+                  <img
+                    src={item.image}
+                    alt={item.label}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[rgba(44,26,14,0.9)] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[0.7rem] font-semibold tracking-wide uppercase text-[#3E6B4E] z-10">
+                      {item.category}
+                    </span>
+                    <span className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm w-8 h-8 rounded-full flex items-center justify-center text-white text-base transition-all duration-200 group-hover:bg-white/30 group-hover:scale-110">
+                      ⤢
+                    </span>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-5 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
+                      <div className="font-['Cormorant_Garamond',serif] text-lg font-bold mb-1">{item.label}</div>
+                      <div className="text-sm font-light opacity-90 leading-relaxed mb-2">{item.caption.substring(0, 60)}...</div>
+                      <div className="text-xs font-normal opacity-70 flex items-center gap-1">📍 {item.location}</div>
+                    </div>
                   </div>
                 </div>
+                <div className="p-5">
+                  <div className="font-['Cormorant_Garamond',serif] text-lg font-bold text-[#2C1A0E] mb-2">{item.label}</div>
+                  <div className="text-sm font-light text-[#7A4A2E] leading-relaxed mb-2">{item.caption.substring(0, 80)}...</div>
+                  <div className="text-xs font-normal text-[#3E6B4E] flex items-center gap-1">📍 {item.location}</div>
+                </div>
               </div>
-              <div className="p-5">
-                <div className="font-['Cormorant_Garamond',serif] text-lg font-bold text-[#2C1A0E] mb-2">{item.label}</div>
-                <div className="text-sm font-light text-[#7A4A2E] leading-relaxed mb-2">{item.caption.substring(0, 80)}...</div>
-                <div className="text-xs font-normal text-[#3E6B4E] flex items-center gap-1">📍 {item.location}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Lightbox Modal — FIXED */}
+      {/* Lightbox Modal */}
       {lightboxItem && (
         <div
           className="fixed inset-0 z-[9999] bg-[rgba(26,14,6,0.92)] backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fadeIn"
@@ -268,7 +305,7 @@ const Gallery = () => {
         </div>
       )}
     </>
-  )
-}
+  );
+};
 
-export default Gallery
+export default Gallery;

@@ -1,4 +1,12 @@
-import { useState } from "react"
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { 
+  submitInquiry, 
+  resetSubmitStatus, 
+  selectIsSubmitting, 
+  selectSubmitSuccess, 
+  selectContactError 
+} from "../../store/slice/contactSlice";
 
 const CONTACT_ITEMS = [
   {
@@ -16,7 +24,7 @@ const CONTACT_ITEMS = [
     label: "Availability",
     value: "Mon – Sat, 7:00am – 6:00pm",
   },
-]
+];
 
 const SERVICE_OPTIONS = [
   "Poultry purchase",
@@ -25,28 +33,41 @@ const SERVICE_OPTIONS = [
   "Bulk / wholesale supply",
   "Agri advice / mentorship",
   "Custom / event order",
-]
+];
 
 const Contact = () => {
+  const dispatch = useAppDispatch();
+  
+  // Read state engines straight out of Redux Toolkit slice selectors
+  const isSubmitting = useAppSelector(selectIsSubmitting);
+  const submitSuccess = useAppSelector(selectSubmitSuccess);
+  const submissionError = useAppSelector(selectContactError);
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
     service: "",
     message: "",
-  })
-  const [submitted, setSubmitted] = useState(false)
+  });
+
+  // Always reset the submission success state when this component mounts
+  useEffect(() => {
+    dispatch(resetSubmitStatus());
+  }, [dispatch]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    if (!form.name || !form.phone) return
-    setSubmitted(true)
-  }
+    e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim()) return;
+    
+    // Dispatch to global async API thunk layer instead of manual local toggle
+    dispatch(submitInquiry(form));
+  };
 
   return (
     <>
@@ -192,6 +213,16 @@ const Contact = () => {
           opacity: 0.5; cursor: not-allowed; transform: none;
         }
 
+        /* Error Banner Handling */
+        .ct-error-banner {
+          background: rgba(211, 47, 47, 0.12);
+          border: 1px solid rgba(211, 47, 47, 0.3);
+          color: #ff8a80;
+          padding: 0.82rem 1rem;
+          font-size: 0.85rem;
+          line-height: 1.4;
+        }
+
         /* Success state */
         .ct-success {
           background: rgba(62,107,78,0.15);
@@ -251,7 +282,7 @@ const Contact = () => {
       <section className="ct-section" id="contact" aria-label="Contact">
         <div className="ct-inner">
 
-          {/* Left */}
+          {/* Left Block */}
           <div>
             <p className="ct-label">Get in Touch</p>
             <h2 className="ct-title">
@@ -275,17 +306,25 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* Right — Form */}
-          {submitted ? (
+          {/* Right Block — Controlled Form */}
+          {submitSuccess ? (
             <div className="ct-success" role="alert">
               <div className="ct-success-icon">✅</div>
               <div className="ct-success-title">Message sent!</div>
               <p className="ct-success-body">
-                Thank you, {form.name}. Ken will be in touch via WhatsApp shortly.
+                Thank you, {form.name}. Your inquiry has been logged successfully. Ken will be in touch via WhatsApp shortly.
               </p>
             </div>
           ) : (
             <div className="ct-form" role="form" aria-label="Contact form">
+              
+              {/* Dynamic Error Messaging Output */}
+              {submissionError && (
+                <div className="ct-error-banner" role="alert">
+                  ⚠️ {submissionError}
+                </div>
+              )}
+
               <div>
                 <label className="ct-field-label" htmlFor="ct-name">Your Name</label>
                 <input
@@ -296,6 +335,7 @@ const Contact = () => {
                   placeholder="Enter your name"
                   value={form.name}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -309,6 +349,7 @@ const Contact = () => {
                   placeholder="+254 769 014 126"
                   value={form.phone}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -321,6 +362,7 @@ const Contact = () => {
                     className="ct-select"
                     value={form.service}
                     onChange={handleChange}
+                    disabled={isSubmitting}
                   >
                     <option value="">Select a service</option>
                     {SERVICE_OPTIONS.map((opt) => (
@@ -339,16 +381,17 @@ const Contact = () => {
                   placeholder="Tell me what you need..."
                   value={form.message}
                   onChange={handleChange}
+                  disabled={isSubmitting}
                 />
               </div>
 
               <button
                 className="ct-submit"
                 onClick={handleSubmit}
-                disabled={!form.name || !form.phone}
+                disabled={isSubmitting || !form.name.trim() || !form.phone.trim()}
                 aria-label="Send message"
               >
-                Send Message →
+                {isSubmitting ? "Sending Inquiry..." : "Send Message →"}
               </button>
             </div>
           )}
@@ -364,11 +407,11 @@ const Contact = () => {
           Kitui &amp; Makueni Counties · Kenya · Est. 2019
         </p>
         <p className="ct-footer-right">
-          YALTA Mentorship Alumnus · 2024/2025
+          African Youth Panelist - Kitui County
         </p>
       </footer>
     </>
-  )
-}
+  );
+};
 
-export default Contact
+export default Contact;

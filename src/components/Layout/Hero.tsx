@@ -1,18 +1,25 @@
 import { useEffect, useRef } from "react"
-
-const COUNTIES = [
-  { name: "Kitui", label: "County" },
-  { name: "Makueni", label: "County" },
-]
+import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { fetchHeroContent, selectHeroContent, selectHeroIsFetching } from "../../store/slice/heroSlice"
 
 const Hero = () => {
+  const dispatch = useAppDispatch()
+  const content  = useAppSelector(selectHeroContent)
+  const loading  = useAppSelector(selectHeroIsFetching)
+
   const headlineRef = useRef<HTMLHeadingElement>(null)
-  const tagRef = useRef<HTMLParagraphElement>(null)
-  const subRef = useRef<HTMLParagraphElement>(null)
-  const actionsRef = useRef<HTMLDivElement>(null)
-  const badgesRef = useRef<HTMLDivElement>(null)
+  const tagRef      = useRef<HTMLParagraphElement>(null)
+  const subRef      = useRef<HTMLParagraphElement>(null)
+  const actionsRef  = useRef<HTMLDivElement>(null)
+  const badgesRef   = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    dispatch(fetchHeroContent())
+  }, [dispatch])
+
+  // Re-run entrance animation whenever content loads
+  useEffect(() => {
+    if (!content) return
     const els = [
       tagRef.current,
       headlineRef.current,
@@ -32,7 +39,34 @@ const Hero = () => {
         })
       })
     })
-  }, [])
+  }, [content])
+
+  // Split headline into parts around the emphasis phrase
+  const renderHeadline = () => {
+    if (!content) return null
+    const { headline, headline_emphasis } = content
+    const parts = headline.split(headline_emphasis)
+    return (
+      <>
+        {parts[0]}<em>{headline_emphasis}</em>{parts[1]}
+      </>
+    )
+  }
+
+  if (loading && !content) return (
+    <section
+      style={{
+        minHeight: '100vh',
+        background: '#FAF5EC',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      aria-label="Loading hero"
+    />
+  )
+
+  if (!content) return null
 
   return (
     <>
@@ -50,8 +84,6 @@ const Hero = () => {
           background: #FAF5EC;
           font-family: 'Outfit', sans-serif;
         }
-
-        /* Ambient background blobs */
         .hero-bg {
           position: absolute;
           inset: 0;
@@ -61,259 +93,150 @@ const Hero = () => {
             radial-gradient(ellipse 60% 50% at 80% 40%, rgba(90,143,98,0.08) 0%, transparent 70%),
             radial-gradient(ellipse 50% 60% at 10% 80%, rgba(212,168,67,0.07) 0%, transparent 60%);
         }
-
-        /* Hero image - positioned on the right side */
         .hero-image {
           position: absolute;
-          right: 0;
-          bottom: 0;
-          width: 45%;
-          max-width: 600px;
-          height: auto;
-          z-index: 0;
-          pointer-events: none;
-          opacity: 0.85;
-          object-fit: cover;
-          object-position: center bottom;
+          right: 0; bottom: 0;
+          width: 45%; max-width: 600px;
+          height: auto; z-index: 0;
+          pointer-events: none; opacity: 0.85;
+          object-fit: cover; object-position: center bottom;
           mask-image: linear-gradient(to left, black 60%, transparent 100%);
           -webkit-mask-image: linear-gradient(to left, black 60%, transparent 100%);
         }
-
-        /* Larger screens - image comes up higher */
         @media (min-width: 1200px) {
-          .hero-image {
-            bottom: 0;
-            width: 40%;
-            opacity: 0.9;
-          }
+          .hero-image { bottom: 0; width: 40%; opacity: 0.9; }
         }
-
-        /* Tablet - reduce opacity and size */
         @media (max-width: 900px) {
           .hero-image {
-            width: 50%;
-            opacity: 0.6;
+            width: 50%; opacity: 0.6;
             mask-image: linear-gradient(to left, black 40%, transparent 100%);
             -webkit-mask-image: linear-gradient(to left, black 40%, transparent 100%);
           }
         }
-
-        /* Mobile - hide image or make very subtle */
         @media (max-width: 680px) {
-          .hero-image {
-            opacity: 0.25;
-            width: 70%;
-          }
+          .hero-image { opacity: 0.25; width: 70%; }
         }
-
-        /* Eyebrow tag */
         .hero-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.65rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: #3E6B4E;
-          margin-bottom: 1.8rem;
-          position: relative;
-          z-index: 1;
+          display: inline-flex; align-items: center; gap: 0.65rem;
+          font-size: 0.75rem; font-weight: 600;
+          letter-spacing: 0.16em; text-transform: uppercase;
+          color: #3E6B4E; margin-bottom: 1.8rem;
+          position: relative; z-index: 1;
         }
         .hero-tag-line {
-          display: inline-block;
-          width: 28px;
-          height: 1.5px;
-          background: #3E6B4E;
-          flex-shrink: 0;
+          display: inline-block; width: 28px; height: 1.5px;
+          background: #3E6B4E; flex-shrink: 0;
         }
-
-        /* Headline */
         .hero-headline {
           font-family: 'Cormorant Garamond', serif;
           font-size: clamp(3.2rem, 7vw, 7rem);
-          font-weight: 700;
-          line-height: 1.0;
-          color: #2C1A0E;
-          position: relative;
-          z-index: 1;
-          max-width: 820px;
-          margin: 0;
+          font-weight: 700; line-height: 1.0;
+          color: #2C1A0E; position: relative; z-index: 1;
+          max-width: 820px; margin: 0;
         }
-        .hero-headline em {
-          font-style: italic;
-          color: #3E6B4E;
-        }
-
-        /* Subtitle */
+        .hero-headline em { font-style: italic; color: #3E6B4E; }
         .hero-sub {
-          font-size: 1.05rem;
-          line-height: 1.8;
-          font-weight: 300;
-          color: #7A4A2E;
-          max-width: 540px;
-          margin: 2rem 0 3rem;
-          position: relative;
-          z-index: 1;
+          font-size: 1.05rem; line-height: 1.8; font-weight: 300;
+          color: #7A4A2E; max-width: 540px; margin: 2rem 0 3rem;
+          position: relative; z-index: 1;
         }
-
-        /* CTA row */
         .hero-actions {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-          flex-wrap: wrap;
-          position: relative;
-          z-index: 1;
+          display: flex; gap: 1rem; align-items: center;
+          flex-wrap: wrap; position: relative; z-index: 1;
         }
         .hero-btn-primary {
-          background: #3E6B4E;
-          color: white;
+          background: #3E6B4E; color: white;
           padding: 0.85rem 2rem;
           font-family: 'Outfit', sans-serif;
-          font-size: 0.88rem;
-          font-weight: 500;
-          letter-spacing: 0.04em;
-          text-decoration: none;
-          border: none;
-          cursor: pointer;
-          display: inline-block;
+          font-size: 0.88rem; font-weight: 500;
+          letter-spacing: 0.04em; text-decoration: none;
+          border: none; cursor: pointer; display: inline-block;
           transition: background 0.25s, transform 0.2s;
         }
-        .hero-btn-primary:hover {
-          background: #2C1A0E;
-          transform: translateY(-2px);
-        }
+        .hero-btn-primary:hover { background: #2C1A0E; transform: translateY(-2px); }
         .hero-btn-outline {
-          border: 1.5px solid #7A4A2E;
-          color: #7A4A2E;
+          border: 1.5px solid #7A4A2E; color: #7A4A2E;
           padding: 0.82rem 2rem;
           font-family: 'Outfit', sans-serif;
-          font-size: 0.88rem;
-          font-weight: 500;
-          letter-spacing: 0.04em;
-          text-decoration: none;
-          cursor: pointer;
-          display: inline-block;
-          background: transparent;
+          font-size: 0.88rem; font-weight: 500;
+          letter-spacing: 0.04em; text-decoration: none;
+          cursor: pointer; display: inline-block; background: transparent;
           transition: border-color 0.25s, color 0.25s;
         }
-        .hero-btn-outline:hover {
-          border-color: #3E6B4E;
-          color: #3E6B4E;
-        }
-
-        /* Floating county badges */
+        .hero-btn-outline:hover { border-color: #3E6B4E; color: #3E6B4E; }
         .hero-badges {
-          position: absolute;
-          right: 5%;
-          top: 50%;
+          position: absolute; right: 5%; top: 50%;
           transform: translateY(-50%);
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          z-index: 2;
+          display: flex; flex-direction: column; gap: 1rem; z-index: 2;
         }
         .hero-badge {
           background: #FFFDF8;
           border: 1px solid rgba(122,74,46,0.15);
-          padding: 1rem 1.4rem;
-          text-align: center;
+          padding: 1rem 1.4rem; text-align: center;
           box-shadow: 0 4px 24px rgba(44,26,14,0.08);
           backdrop-filter: blur(4px);
         }
-        .hero-badge:nth-child(1) {
-          animation: kmFloat 4s ease-in-out infinite;
-        }
-        .hero-badge:nth-child(2) {
-          animation: kmFloat 4s ease-in-out infinite;
-          animation-delay: -2s;
-        }
+        .hero-badge:nth-child(1) { animation: kmFloat 4s ease-in-out infinite; }
+        .hero-badge:nth-child(2) { animation: kmFloat 4s ease-in-out infinite; animation-delay: -2s; }
         .hero-badge-name {
           font-family: 'Cormorant Garamond', serif;
-          font-size: 1.9rem;
-          font-weight: 700;
-          color: #3E6B4E;
-          line-height: 1;
-          display: block;
+          font-size: 1.9rem; font-weight: 700;
+          color: #3E6B4E; line-height: 1; display: block;
         }
         .hero-badge-label {
-          display: block;
-          font-size: 0.72rem;
-          font-weight: 500;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          color: #7A4A2E;
-          margin-top: 0.25rem;
+          display: block; font-size: 0.72rem; font-weight: 500;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          color: #7A4A2E; margin-top: 0.25rem;
         }
-
         @keyframes kmFloat {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-10px); }
         }
-
-        /* Responsive */
         @media (max-width: 900px) {
-          .hero-badges {
-            position: static;
-            transform: none;
-            flex-direction: row;
-            margin-top: 3rem;
-          }
+          .hero-badges { position: static; transform: none; flex-direction: row; margin-top: 3rem; }
         }
-
         @media (max-width: 520px) {
-          .hero-section {
-            padding: 100px 6% 4rem;
-          }
-          .hero-badges {
-            flex-direction: column;
-            align-items: flex-start;
-          }
+          .hero-section { padding: 100px 6% 4rem; }
+          .hero-badges { flex-direction: column; align-items: flex-start; }
         }
       `}</style>
 
       <section className="hero-section" id="home" aria-label="Hero">
-        {/* Ambient blobs */}
         <div className="hero-bg" aria-hidden="true" />
 
-        {/* Hero Image - replace src with your actual image */}
-        <img 
-          src="https://images.pexels.com/photos/33611653/pexels-photo-33611653.jpeg"  // ← Replace with your image path
-          alt="Ken Mutua with livestock on his farm"
-          className="hero-image"
-          loading="eager"
-        />
+        {content.image_url && (
+          <img
+            src={content.image_url}
+            alt={content.image_alt ?? 'Ken Mutua Farms'}
+            className="hero-image"
+            loading="eager"
+          />
+        )}
 
-        {/* Eyebrow */}
         <p className="hero-tag" ref={tagRef}>
           <span className="hero-tag-line" />
-          Livestock &amp; Poultry Farmer — Kitui &amp; Makueni
+          {content.tag_line}
         </p>
 
-        {/* Headline */}
         <h1 className="hero-headline" ref={headlineRef}>
-          From <em>charcoal sacks</em>
-          <br />
-          to a thriving farm
+          {renderHeadline()}
         </h1>
 
-        {/* Subtitle */}
         <p className="hero-sub" ref={subRef}>
-          Built from nothing but determination. Started in 2019 with proceeds
-          from selling charcoal, Ken Mutua now runs a livestock and poultry
-          operation across two counties in Kenya.
+          {content.subtitle}
         </p>
 
-        {/* CTAs */}
         <div className="hero-actions" ref={actionsRef}>
-          <a href="#story" className="hero-btn-primary">Read My Story</a>
-          <a href="#services" className="hero-btn-outline">View Services</a>
+          <a href={content.primary_btn_href} className="hero-btn-primary">
+            {content.primary_btn_label}
+          </a>
+          <a href={content.secondary_btn_href} className="hero-btn-outline">
+            {content.secondary_btn_label}
+          </a>
         </div>
 
-        {/* Floating county badges */}
         <div className="hero-badges" ref={badgesRef} aria-label="Counties we operate in">
-          {COUNTIES.map(({ name, label }) => (
+          {content.counties.map(({ name, label }) => (
             <div className="hero-badge" key={name}>
               <span className="hero-badge-name">{name}</span>
               <span className="hero-badge-label">{label}</span>

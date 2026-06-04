@@ -1,305 +1,156 @@
-const TIMELINE = [
-  {
-    year: "2019",
-    heading: "The Charcoal Days",
-    desc: "Sold sacks of charcoal — reinvested every penny with purpose. Purchased 3 goats as the first livestock investment, planting the seed of what was to come.",
-    tag: "Livestock begins",
-    dot: "19",
-    active: false,
-  },
-  {
-    year: "2020",
-    heading: "Poultry Farm Established",
-    desc: "Set up a full poultry farming operation. Chickens, structure, and a serious business mindset. What began with goats now grew wings — literally.",
-    tag: "Poultry launch",
-    dot: "20",
-    active: false,
-  },
-  {
-    year: "2024 — 2025",
-    heading: "YALTA Mentorship",
-    desc: "Selected for the prestigious YALTA program — a 6-month intensive mentorship for outstanding young agripreneurs. A national recognition of the farming journey and future potential.",
-    tag: "YALTA Program · 6 months",
-    dot: "★",
-    active: true,
-  },
-  {
-    year: "Present",
-    heading: "Two Counties, Growing Strong",
-    desc: "Full livestock and poultry operation across Kitui and Makueni counties. From charcoal sacks to a recognised agripreneur — the journey continues.",
-    tag: "Kitui · Makueni",
-    dot: "NOW",
-    active: true,
-    isNow: true,
-  },
-];
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  fetchStoryContent,
+  selectOriginContent,
+  selectTimeline,
+  selectStoryIsFetching,
+  selectStoryError,
+} from '../../store/slice/storySlice';
 
 const MyStory = () => {
+  const dispatch = useAppDispatch();
+  const origin = useAppSelector(selectOriginContent);
+  const timeline = useAppSelector(selectTimeline);
+  const isLoading = useAppSelector(selectStoryIsFetching);
+  const error = useAppSelector(selectStoryError);
+
+  useEffect(() => {
+    dispatch(fetchStoryContent());
+  }, [dispatch]);
+
+  // Convert newlines to <br /> for the origin title
+  const formatTitleWithBreaks = (text: string) => {
+    if (!text) return '';
+    return text.split('\n').map((line, i) => (
+      <span key={i}>
+        {line}
+        {i < text.split('\n').length - 1 && <br />}
+      </span>
+    ));
+  };
+
+  if (isLoading && !origin) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-[#2C1A0E]">
+        <p className="text-sm text-[#D4A843]">Loading story...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-[#2C1A0E]">
+        <p className="text-sm text-red-400">Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (!origin) return null;
+
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Outfit:wght@300;400;500;600&display=swap');
-
-        /* ── ORIGIN ── */
-        .ms-origin {
-          background: #2C1A0E;
-          padding: 6rem 6%;
-          position: relative;
-          overflow: hidden;
-          font-family: 'Outfit', sans-serif;
-        }
-        .ms-origin-watermark {
-          position: absolute;
-          top: -80px; left: -20px;
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 28rem; font-weight: 700;
-          color: rgba(255,255,255,0.03);
-          line-height: 1;
-          pointer-events: none;
-          user-select: none;
-        }
-        .ms-origin-inner {
-          display: grid;
-          grid-template-columns: 1fr 1.4fr;
-          gap: 6rem;
-          align-items: start;
-          position: relative;
-          z-index: 1;
-          max-width: 1280px;
-          margin: 0 auto;
-        }
-
-        /* Left col */
-        .ms-origin-label {
-          font-size: 0.72rem; font-weight: 600;
-          letter-spacing: 0.16em; text-transform: uppercase;
-          color: #D4A843; margin-bottom: 1.2rem;
-        }
-        .ms-origin-title {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: clamp(2.2rem, 4vw, 3.5rem);
-          font-weight: 600; line-height: 1.15;
-          color: #F2DBA8;
-        }
-        .ms-origin-title em {
-          font-style: italic;
-          color: #D4A843;
-        }
-        .ms-origin-body {
-          font-size: 1rem; line-height: 1.85; font-weight: 300;
-          color: rgba(242,219,168,0.65);
-          margin-top: 1.8rem;
-        }
-
-        /* Right col */
-        .ms-origin-quote {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 1.55rem; font-style: italic;
-          color: #F2DBA8; line-height: 1.5;
-          border-left: 3px solid #D4A843;
-          padding-left: 1.5rem;
-          margin-bottom: 2rem;
-        }
-        .ms-origin-detail {
-          font-size: 1rem; line-height: 1.85; font-weight: 300;
-          color: rgba(242,219,168,0.65);
-        }
-
-        /* ── TIMELINE ── */
-        .ms-timeline-section {
-          background: #2C1A0E;
-          padding: 0 6% 6rem;
-          font-family: 'Outfit', sans-serif;
-        }
-        .ms-timeline-label {
-          font-size: 0.72rem; font-weight: 600;
-          letter-spacing: 0.16em; text-transform: uppercase;
-          color: #D4A843;
-          text-align: center;
-          padding-bottom: 3rem;
-        }
-
-        .ms-timeline {
-          position: relative;
-          max-width: 860px;
-          margin: 0 auto;
-        }
-        .ms-timeline-spine {
-          position: absolute;
-          left: 50%; top: 0; bottom: 0;
-          width: 1px;
-          background: rgba(212,168,67,0.2);
-          transform: translateX(-50%);
-        }
-
-        /* Each row */
-        .ms-tl-row {
-          display: grid;
-          grid-template-columns: 1fr 60px 1fr;
-          margin-bottom: 3rem;
-          align-items: start;
-        }
-
-        /* Odd rows: content left, empty right */
-        .ms-tl-row:nth-child(odd) .ms-tl-content {
-          grid-column: 1;
-          text-align: right;
-          padding-right: 2.5rem;
-        }
-        .ms-tl-row:nth-child(odd) .ms-tl-dot  { grid-column: 2; }
-        .ms-tl-row:nth-child(odd) .ms-tl-empty { grid-column: 3; }
-
-        /* Even rows: empty left, content right */
-        .ms-tl-row:nth-child(even) .ms-tl-empty   { grid-column: 1; }
-        .ms-tl-row:nth-child(even) .ms-tl-dot      { grid-column: 2; }
-        .ms-tl-row:nth-child(even) .ms-tl-content  {
-          grid-column: 3;
-          text-align: left;
-          padding-left: 2.5rem;
-        }
-
-        .ms-tl-dot {
-          justify-self: center;
-          width: 52px; height: 52px;
-          border-radius: 50%;
-          background: #2C1A0E;
-          border: 2px solid #D4A843;
-          display: flex; align-items: center; justify-content: center;
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.88rem; font-weight: 700;
-          color: #D4A843;
-          position: relative; z-index: 1;
-          letter-spacing: -0.02em;
-          flex-shrink: 0;
-        }
-        .ms-tl-dot.active {
-          background: #D4A843;
-          color: #2C1A0E;
-          border-color: #D4A843;
-          box-shadow: 0 0 0 6px rgba(212,168,67,0.15);
-        }
-        .ms-tl-dot.now {
-          background: #3E6B4E;
-          color: white;
-          border-color: #3E6B4E;
-          box-shadow: 0 0 0 6px rgba(62,107,78,0.2);
-          font-size: 0.7rem;
-          letter-spacing: 0.04em;
-        }
-
-        .ms-tl-year {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 2rem; font-weight: 700;
-          color: #D4A843; line-height: 1;
-          margin-bottom: 0.4rem;
-        }
-        .ms-tl-heading {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 1.3rem; font-weight: 600;
-          color: #F2DBA8; margin-bottom: 0.5rem;
-        }
-        .ms-tl-desc {
-          font-size: 0.88rem; line-height: 1.7; font-weight: 300;
-          color: rgba(242,219,168,0.65);
-        }
-        .ms-tl-tag {
-          display: inline-block;
-          margin-top: 0.7rem;
-          background: rgba(212,168,67,0.1);
-          border: 1px solid rgba(212,168,67,0.25);
-          color: #D4A843;
-          font-size: 0.73rem; font-weight: 500;
-          letter-spacing: 0.06em;
-          padding: 0.25rem 0.7rem;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 860px) {
-          .ms-origin-inner {
-            grid-template-columns: 1fr;
-            gap: 2.5rem;
-          }
-          /* Flatten timeline to left-aligned on mobile */
-          .ms-timeline-spine { left: 26px; transform: none; }
-          .ms-tl-row {
-            grid-template-columns: 52px 1fr;
-            gap: 0 1rem;
-          }
-          .ms-tl-row:nth-child(odd) .ms-tl-content,
-          .ms-tl-row:nth-child(even) .ms-tl-content {
-            grid-column: 2; grid-row: 1;
-            text-align: left;
-            padding: 0;
-          }
-          .ms-tl-row:nth-child(odd) .ms-tl-dot,
-          .ms-tl-row:nth-child(even) .ms-tl-dot {
-            grid-column: 1; grid-row: 1;
-          }
-          .ms-tl-empty { display: none; }
-        }
-      `}</style>
-
       {/* ── ORIGIN STORY ── */}
-      <section className="ms-origin" id="story" aria-label="My story">
-        <span className="ms-origin-watermark" aria-hidden="true">"</span>
+      <section className="relative overflow-hidden bg-[#2C1A0E] px-6 py-24 md:px-[6%] font-sans" id='story'>
+        {/* Watermark */}
+        <span
+          className="absolute -top-20 -left-5 font-serif text-[28rem] font-bold text-white/5 select-none pointer-events-none"
+          aria-hidden="true"
+        >
+          "
+        </span>
 
-        <div className="ms-origin-inner">
-          {/* Left */}
+        <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_1.4fr] gap-12 md:gap-24 items-start">
+          {/* Left column */}
           <div>
-            <p className="ms-origin-label">The Origin</p>
-            <h2 className="ms-origin-title">
-              Every empire<br />starts with a<br /><em>single trade</em>
+            <p className="text-xs font-semibold tracking-[0.16em] uppercase text-[#D4A843] mb-5">
+              {origin.origin_label}
+            </p>
+            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-[#F2DBA8]">
+              {formatTitleWithBreaks(origin.origin_title)}
+              {origin.origin_emphasis && (
+                <em className="italic text-[#D4A843] not-italic">
+                  {origin.origin_emphasis}
+                </em>
+              )}
             </h2>
-            <p className="ms-origin-body">
-              Before the livestock, before the poultry farm, before the two counties —
-              there were sacks of charcoal. Ken Mutua sold charcoal, saved every shilling,
-              and made a decision that would change everything. This is the story of what
-              happens when discipline meets vision.
+            <p className="text-base leading-relaxed font-light text-[#F2DBA8]/65 mt-6">
+              {origin.origin_body}
             </p>
           </div>
 
-          {/* Right */}
+          {/* Right column */}
           <div>
-            <blockquote className="ms-origin-quote">
-              "I sold charcoal so I could buy my first three goats. That was the beginning of everything."
+            <blockquote className="font-serif text-xl md:text-2xl italic text-[#F2DBA8] leading-relaxed border-l-3 border-[#D4A843] pl-6 mb-8">
+              “{origin.origin_quote}”
             </blockquote>
-            <p className="ms-origin-detail">
-              In 2019, with the proceeds from selling sacks of charcoal, Ken purchased three goats —
-              a humble but deliberate investment. By 2020, he had set up a fully operational poultry farm.
-              Today, his operation spans livestock and poultry across Kitui and Makueni counties, and in
-              2024/2025 he was selected for a prestigious 6-month mentorship under the YALTA program —
-              a recognition of the quality and promise of his work.
+            <p className="text-base leading-relaxed font-light text-[#F2DBA8]/65">
+              {origin.origin_detail}
             </p>
           </div>
         </div>
       </section>
 
       {/* ── TIMELINE ── */}
-      <section className="ms-timeline-section" aria-label="Journey timeline">
-        <p className="ms-timeline-label">The Journey</p>
+      <section className="bg-[#2C1A0E] px-6 pb-24 md:px-[6%] font-sans">
+        <p className="text-xs font-semibold tracking-[0.16em] uppercase text-[#D4A843] text-center pb-12">
+          The Journey
+        </p>
 
-        <div className="ms-timeline">
-          <div className="ms-timeline-spine" aria-hidden="true" />
+        <div className="relative max-w-3xl mx-auto">
+          {/* Central spine */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#D4A843]/20 -translate-x-1/2 hidden md:block" />
 
-          {TIMELINE.map((item, i) => (
-            <div className="ms-tl-row" key={i}>
-              <div className="ms-tl-content">
-                <div className="ms-tl-year">{item.year}</div>
-                <div className="ms-tl-heading">{item.heading}</div>
-                <p className="ms-tl-desc">{item.desc}</p>
-                <span className="ms-tl-tag">{item.tag}</span>
-              </div>
-
+          {timeline.map((item, idx) => {
+            const isEven = idx % 2 === 1;
+            return (
               <div
-                className={`ms-tl-dot ${item.active ? "active" : ""} ${item.isNow ? "now" : ""}`}
-                aria-hidden="true"
+                key={item.id}
+                className="relative grid grid-cols-1 md:grid-cols-[1fr_60px_1fr] gap-0 mb-12 items-start"
               >
-                {item.dot}
-              </div>
+                {/* Content – left side for odd, right side for even */}
+                <div
+                  className={`
+                    md:pr-10 md:text-right
+                    ${isEven ? 'md:col-start-3 md:pl-10 md:text-left' : 'md:col-start-1'}
+                  `}
+                >
+                  <div className="font-serif text-3xl font-bold text-[#D4A843] leading-none mb-1">
+                    {item.year}
+                  </div>
+                  <div className="font-serif text-xl font-semibold text-[#F2DBA8] mb-2">
+                    {item.heading}
+                  </div>
+                  <p className="text-sm leading-relaxed font-light text-[#F2DBA8]/65">
+                    {item.description}
+                  </p>
+                  <span className="inline-block mt-2 bg-[#D4A843]/10 border border-[#D4A843]/40 text-[#D4A843] text-[11px] font-medium tracking-wide px-2 py-0.5">
+                    {item.tag}
+                  </span>
+                </div>
 
-              <div className="ms-tl-empty" />
-            </div>
-          ))}
+                {/* Dot */}
+                <div
+                  className={`
+                    w-12 h-12 md:w-[52px] md:h-[52px] rounded-full border-2 flex items-center justify-center font-serif font-bold text-sm z-10
+                    ${item.active && !item.is_now ? 'bg-[#D4A843] text-[#2C1A0E] border-[#D4A843] shadow-[0_0_0_6px_rgba(212,168,67,0.15)]' : ''}
+                    ${item.is_now ? 'bg-[#3E6B4E] text-white border-[#3E6B4E] shadow-[0_0_0_6px_rgba(62,107,78,0.2)] text-[11px] tracking-wide' : ''}
+                    ${!item.active && !item.is_now ? 'bg-[#2C1A0E] text-[#D4A843] border-[#D4A843]' : ''}
+                    justify-self-center md:justify-self-center
+                    ${isEven ? 'md:col-start-2' : 'md:col-start-2'}
+                    row-start-1 md:row-auto
+                    mx-auto md:mx-0
+                  `}
+                  aria-hidden="true"
+                >
+                  {item.dot}
+                </div>
+
+                {/* Empty spacer – only needed on md+ to keep grid symmetry */}
+                <div className="hidden md:block" />
+              </div>
+            );
+          })}
         </div>
       </section>
     </>
