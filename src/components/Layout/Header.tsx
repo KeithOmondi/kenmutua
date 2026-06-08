@@ -255,8 +255,8 @@ const Header = () => {
         <nav className="km-nav-bar" aria-label="Main navigation">
           {/* Logo */}
           <a href="#home" className="km-logo" aria-label="Ken Mutua Farms — home">
-            <span className="km-logo-name">
-              Ken Mutua <span>Farms</span>
+            <span className="km-logo-name font-serif">
+              Asili <span>Acres</span>
             </span>
             <span className="km-logo-sub">Kitui · Makueni · Est. 2019</span>
           </a>

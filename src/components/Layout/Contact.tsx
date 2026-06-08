@@ -400,8 +400,8 @@ const Contact = () => {
 
       {/* ── FOOTER ── */}
       <footer className="ct-footer">
-        <div className="ct-footer-logo">
-          Ken Mutua <span>Farms</span>
+        <div className="ct-footer-logo font-serif">
+          Asili <span>Acres</span>
         </div>
         <p className="ct-footer-mid">
           Kitui &amp; Makueni Counties · Kenya · Est. 2019
