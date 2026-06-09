@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Users,
   Bird,
   Package,
   MapPin,
@@ -25,7 +24,7 @@ const links = [
   { to: '/admin/coverage',  label: 'Coverage',      icon: MapPin          },
   { to: '/admin/gallery',   label: 'Gallery',       icon: Bird            },
   { to: '/admin/contact',   label: 'User Messages', icon: MessageSquare   },
-  { to: '/admin/users',     label: 'Users',         icon: Users           },
+  //{ to: '/admin/users',     label: 'Users',         icon: Users           },
 ];
 
 const AdminSidebar = () => {
