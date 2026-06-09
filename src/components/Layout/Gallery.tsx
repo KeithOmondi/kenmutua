@@ -147,7 +147,7 @@ const Gallery = () => {
             On the Farm
           </span>
           <h2 className="font-['Cormorant_Garamond',serif] text-4xl md:text-5xl font-bold text-[#2C1A0E] leading-tight mb-3">
-            Life at Ken Mutua Farms
+            Life at Asili Acres
           </h2>
           <p className="text-base font-light text-[#7A4A2E] max-w-[600px] mx-auto leading-relaxed">
             A glimpse into daily farm life — from the birds and goats to the land, the work, and the milestones.
